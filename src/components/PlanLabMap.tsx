@@ -392,14 +392,14 @@ export default function PlanLabMap({
             <h4 className="text-[10px] uppercase font-mono font-bold tracking-wider text-slate-400 mb-2">
               Heat Risk — Lower is Better 🌡️
             </h4>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid w-full grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
               {[
                 { color: "bg-red-400", label: "High Risk (60+)" },
                 { color: "bg-orange-400", label: "Medium (45–60)" },
                 { color: "bg-yellow-300", label: "Low (30–45)" },
                 { color: "bg-blue-400", label: "Very Low (<30)" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
+                <div key={item.label} className="flex items-center gap-2">
                   <span
                     className={`inline-block w-3.5 h-3.5 rounded ${item.color} opacity-70`}
                   ></span>
@@ -415,14 +415,14 @@ export default function PlanLabMap({
             <h4 className="text-[10px] uppercase font-mono font-bold tracking-wider text-slate-400 mb-2">
               Green Space Index — Higher is Better 🌳
             </h4>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid w-full grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
               {[
                 { color: "bg-green-700", label: "Excellent (85+)" },
                 { color: "bg-emerald-400", label: "Good (70–85)" },
                 { color: "bg-amber-400", label: "Fair (50–70)" },
                 { color: "bg-orange-800", label: "Poor (<50)" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
+                <div key={item.label} className="flex items-center gap-2">
                   <span
                     className={`inline-block w-3.5 h-3.5 rounded ${item.color} opacity-70`}
                   ></span>
@@ -438,14 +438,14 @@ export default function PlanLabMap({
             <h4 className="text-[10px] uppercase font-mono font-bold tracking-wider text-slate-400 mb-2">
               Walkability Score — Higher is Better 🚶
             </h4>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid w-full grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
               {[
                 { color: "bg-emerald-400", label: "Excellent (75+)" },
                 { color: "bg-teal-400", label: "Good (60–75)" },
                 { color: "bg-yellow-400", label: "Fair (41–60)" },
                 { color: "bg-rose-400", label: "Poor (<41)" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
+                <div key={item.label} className="flex items-center gap-2">
                   <span
                     className={`inline-block w-3.5 h-3.5 rounded ${item.color} opacity-70`}
                   ></span>
@@ -461,14 +461,14 @@ export default function PlanLabMap({
             <h4 className="text-[10px] uppercase font-mono font-bold tracking-wider text-slate-400 mb-2">
               Noise Level — Lower is Better 🔇
             </h4>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid w-full grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
               {[
                 { color: "bg-purple-400", label: "Very Loud (65+)" },
                 { color: "bg-fuchsia-400", label: "Moderate (40–65)" },
                 { color: "bg-slate-300", label: "Quiet (21–40)" },
                 { color: "bg-teal-400", label: "Very Quiet (<21)" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
+                <div key={item.label} className="flex items-center gap-2">
                   <span
                     className={`inline-block w-3.5 h-3.5 rounded ${item.color} opacity-70`}
                   ></span>
