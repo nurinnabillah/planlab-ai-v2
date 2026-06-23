@@ -230,34 +230,92 @@ export default function App() {
   const [aiPlanningAdvices, setAiPlanningAdvices] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchAdvice = async () => {
-      setAiLoading(true);
-      try {
-        const activeInterventionNames = cells
-          .filter((c: any) => c.interventionId)
-          .map((c: any) => c.interventionId);
+  const fetchAdvice = async () => {
+    setAiLoading(true);
+    try {
+      const activeInterventionNames = cells
+        .filter((c: any) => c.interventionId)
+        .map((c: any) => c.interventionId);
 
-        const res = await fetch("/api/gemini", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            cells,
-            interventions: activeInterventionNames,
-          }),
-        });
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cells, interventions: activeInterventionNames }),
+      });
 
-        const data = await res.json();
-        if (data.suggestions) setAiPlanningAdvices(data.suggestions);
-      } catch (err) {
-        console.error("Gemini fetch error:", err);
-      } finally {
-        setAiLoading(false);
+      const data = await res.json();
+      if (data.suggestions) setAiPlanningAdvices(data.suggestions);
+    } catch (err) {
+      console.error("Gemini fetch error:", err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Save current scenario to DB
+  const handleSaveScenario = async () => {
+    const name = prompt("Enter scenario name:");
+    if (!name) return;
+
+    const description = prompt("Enter description (optional):") || "";
+
+    const cellStates: { [gridId: string]: string } = {};
+    cells.forEach((c) => {
+      if (c.interventionId) cellStates[c.grid_id] = c.interventionId;
+    });
+
+    // Build summary text from current AI advices
+    const summary = aiPlanningAdvices
+      .map((a) => `${a.title}: ${a.description || a.text}`)
+      .join("\n\n");
+
+    try {
+      const res = await fetch("/api/scenarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, cellStates, summary }),
+      });
+      const data = await res.json();
+      if (data.scenario) {
+        alert(`✅ Saved: "${data.scenario.name}"`);
+        handleReset(); // ← auto reset after save
       }
-    };
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Failed to save scenario.");
+    }
+  };
 
-    fetchAdvice();
-  }, [cells]); // re-runs every time grid changes
+  // Load a scenario from DB
+  const handleLoadScenario = async () => {
+    try {
+      const res = await fetch("/api/scenarios");
+      const data = await res.json();
+      if (!data.scenarios?.length) return alert("No saved scenarios found.");
+
+      // Show list to pick from
+      const names = data.scenarios.map((s: any, i: number) => `${i + 1}. ${s.name}`).join("\n");
+      const pick = prompt(`Pick a scenario:\n${names}\nEnter number:`);
+      if (!pick) return;
+
+      const chosen = data.scenarios[parseInt(pick) - 1];
+      if (!chosen) return alert("Invalid selection.");
+
+      // Apply saved interventions back onto baseline
+      const cellStates = chosen.cell_states;
+      setCells(
+        baselineRef.current.map((cell) => ({
+          ...cell,
+          interventionId: cellStates[cell.grid_id] || undefined,
+        }))
+      );
+      setSelectedCellId(null);
+      alert(`Loaded: ${chosen.name}`);
+    } catch (err) {
+      console.error("Load error:", err);
+      alert("Failed to load scenario.");
+    }
+  };
 
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 
@@ -269,6 +327,8 @@ export default function App() {
         onApplyPreset={handleApplyPreset}
         hasModifications={hasModifications}
         activeInterventionsCount={activeInterventionsCount}
+        onSaveScenario={handleSaveScenario}
+        onLoadScenario={handleLoadScenario}
       />
 
       {/* Main Sandbox Interactive Area */}
@@ -306,11 +366,18 @@ export default function App() {
                   PlanLab AI Local Simulation Advisory
                 </h4>
               </div>
-              {aiLoading && (
-                <span className="text-[10px] text-blue-400 animate-pulse font-medium">
-                  ✨ Generating...
-                </span>
-              )}
+              <button
+                onClick={fetchAdvice}
+                disabled={aiLoading || !hasModifications}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                  hasModifications && !aiLoading
+                    ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer"
+                    : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                }`}
+              >
+                <Sparkles className="h-3 w-3" />
+                {aiLoading ? "Generating..." : "Generate Advisory"}
+              </button>
             </div>
 
             {aiLoading ? (
