@@ -7,7 +7,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params; // ← await params
 
     const result = await pool.query(
-      `UPDATE scenarios SET cell_states = $1, summary = $2 WHERE id = $3 RETURNING *`,
+      `UPDATE scenarios SET cell_states = $1, summary = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
       [JSON.stringify(cellStates), summary || "", id]
     );
 

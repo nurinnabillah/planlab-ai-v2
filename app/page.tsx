@@ -8,6 +8,10 @@ import InterventionToolbar from "../src/components/InterventionToolbar";
 import PlanLabMap from "../src/components/PlanLabMap";
 import CellDetailsPanel from "../src/components/CellDetailsPanel";
 import ScoreSummary from "../src/components/ScoreSummary";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { useAuthState } from "react-firebase-hooks/auth";
+
 import {
   Sparkles,
   Info,
@@ -18,6 +22,7 @@ import {
   Save,
   FolderOpen,
   X,
+  LogOut,
 } from "lucide-react";
 
 const cloneCells = (source: GridCell[]): GridCell[] =>
@@ -43,6 +48,8 @@ export default function App() {
   const [currentScenarioId, setCurrentScenarioId] = useState<string | null>(null);
   const [currentScenarioName, setCurrentScenarioName] = useState<string>("");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [user] = useAuthState(auth);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   useEffect(() => {
     const fetchGrid = async () => {
@@ -323,6 +330,7 @@ export default function App() {
           description: saveModalDesc,
           cellStates,
           summary,
+          userId: user?.uid,
         }),
       });
       const data = await res.json();
@@ -339,18 +347,12 @@ export default function App() {
     }
   };
 
-  // Load a scenario from DB
   const handleLoadScenario = async () => {
     setIsLoadingScenarios(true);
     setShowLoadModal(true);
     try {
-      const res = await fetch("/api/scenarios");
+      const res = await fetch(`/api/scenarios?userId=${user?.uid}`);
       const data = await res.json();
-      if (!data.scenarios?.length) {
-        setShowLoadModal(false);
-        showToast("No saved scenarios found.", "error");
-        return;
-      }
       setSavedScenarios(data.scenarios || []);
     } catch (err) {
       console.error("Load error:", err);
@@ -447,6 +449,7 @@ export default function App() {
         currentScenarioName={currentScenarioName}
         hasNewModifications={hasNewModifications}
         onUpdateScenario={handleUpdateScenario}
+        onSignOut={() => setShowSignOutModal(true)}
       />
 
       {/* Main Sandbox Interactive Area */}
@@ -691,13 +694,19 @@ export default function App() {
                             <p className="text-xs text-slate-500 mt-0.5">{scenario.description}</p>
                           )}
                           <p className="text-[10px] text-slate-400 mt-1 font-mono">
-                            {new Date(scenario.created_at).toLocaleDateString("en-MY", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {scenario.updated_at ? "Updated: " : "Created: "}
+                            {(() => {
+                              const date = new Date(scenario.updated_at || scenario.created_at);
+                              const myt = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+                              return myt.toLocaleString("en-MY", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              });
+                            })()}
                           </p>
                         </div>
                         <div className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono shrink-0">
@@ -715,6 +724,48 @@ export default function App() {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Sign Out Modal */}
+        {showSignOutModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm mx-4 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-rose-50 rounded-lg">
+                  <LogOut className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-slate-800 text-base">Sign Out</h2>
+                  <p className="text-xs text-slate-500">Are you sure you want to leave?</p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-5">
+                <p className="text-xs text-amber-700 font-medium">
+                  ⚠️ Make sure you have saved your current scenario before signing out. Unsaved
+                  changes will be lost.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowSignOutModal(false)}
+                  className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    signOut(auth);
+                    setShowSignOutModal(false);
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-all"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         )}
